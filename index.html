@@ -57,7 +57,7 @@
         
           <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
         
-        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+        <a id="nav-search-btn" class="nav-icon" title="Zoeken"></a>
       </nav>
       <div id="search-form-wrap">
         <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" results="0" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="www.cam365.top"></form>
@@ -140,7 +140,7 @@
 ![center-ness](FCOS/center-ness.png)
 </center>
 
-<p>这个公式其实很好理解，$l^<em>$是像素点距真实框左边距离, $r^</em>$是像素点距真实框右边距离，另外两个参数以此类推。$\frac{\min (l^<em>,r^</em>)}{\max (l^<em>,r^</em>)}$就是左右距离的最小值除以左右距离的最大值。显然，像素点越靠近中心，这个值越接近1(正落在中心时就是最大值1)。$\frac{\min (t^<em>,b^</em>)}{\max t^<em>,b^</em>)}$与之类似，只不过是上下尺度上的。两者相乘就是为了从总体上衡量像素点到中心的距离，开根号是为了避免让这个值过小，影响整体的置信度。</p>
+<p>这个公式其实很好理解，$l^<em>$是像素点距真实框左边距离, $r^</em>$是像素点距真实框右边距离，另外两个参数以此类推。$\frac{\min (l^<em>,r^</em>)}{\max (l^<em>,r^</em>)}$就是左右距离的最小值除以左右距离的最大值。显然，像素点越靠近中心，这个值越接近1(正落在中心时就是最大值1)。$\frac{\min (t^<em>,b^</em>)}{\max (t^<em>,b^</em>)}$与之类似，只不过是上下尺度上的。两者相乘就是为了从总体上衡量像素点到中心的距离，开根号是为了避免让这个值过小，影响整体的置信度。</p>
 <p>Center-Ness是一个单独的指标，在训练时只关注像素点到框中心的距离，不参与其他运算，在推理预测时，输出的值才乘到分类分支上，抑制据中心点较远的像素点的置信度。事实上，作者也提出了只用ground truth中心部分的像素点做预测，然后忽略一部分ground truth中距离中心点较远的像素点类似<a href="">Feature Selective Anchor-Free Module for Single-Shot Object Detection</a>,效果也是不错的,但是会引入新的超参数。</p>
 <h2 id="5-实验部分"><a href="#5-实验部分" class="headerlink" title="5.实验部分"></a>5.实验部分</h2><p>略</p>
 <h2 id="6-个人总结"><a href="#6-个人总结" class="headerlink" title="6.个人总结"></a>6.个人总结</h2><p>很好的一篇论文，尤其是利用Center-Ness处理质量较差的框，在其他论文中是没见过的。论文解决了Anchor机制带来的弊端，同时改进了Anchor Free目标检测网络的低召回率问题。最主要的是，这个论文易读，易懂，强烈推建。</p>
@@ -148,7 +148,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="www.cam365.top/2020/09/21/FCOS/" data-id="ckfc6xj2j0000rov1ndvi01s3" class="article-share-link">Share</a>
+      <a data-url="www.cam365.top/2020/09/21/FCOS/" data-id="ckfc71tnc0000xgv1th06qmvw" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -193,7 +193,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="www.cam365.top/2020/09/18/hello-world/" data-id="ckfc6xj2n0001rov1xt4wu5x2" class="article-share-link">Share</a>
+      <a data-url="www.cam365.top/2020/09/18/hello-world/" data-id="ckfc71tnn0001xgv11qibkiqk" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -218,7 +218,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
+    <h3 class="widget-title">Archieven</h3>
     <div class="widget">
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li></ul>
     </div>
@@ -228,7 +228,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
+    <h3 class="widget-title">Recente berichten</h3>
     <div class="widget">
       <ul>
         
