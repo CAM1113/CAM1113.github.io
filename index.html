@@ -57,7 +57,7 @@
         
           <a id="nav-rss-link" class="nav-icon" href="/atom.xml" title="RSS Feed"></a>
         
-        <a id="nav-search-btn" class="nav-icon" title="Search"></a>
+        <a id="nav-search-btn" class="nav-icon" title="Zoeken"></a>
       </nav>
       <div id="search-form-wrap">
         <form action="//google.com/search" method="get" accept-charset="UTF-8" class="search-form"><input type="search" name="q" results="0" class="search-form-input" placeholder="Search"><button type="submit" class="search-form-submit">&#xF002;</button><input type="hidden" name="sitesearch" value="www.cam365.top"></form>
@@ -107,10 +107,48 @@
 
 </center>
 
+<h2 id="2-Anchor-Free机制和逐像素预测"><a href="#2-Anchor-Free机制和逐像素预测" class="headerlink" title="2.Anchor Free机制和逐像素预测"></a>2.Anchor Free机制和逐像素预测</h2><p>使用Anchor会带来很多问题：</p>
+<ul>
+<li><p>anchor的设置(个数、大小、宽高比等)是一个很重要的超参数，最终会直接影响检测器的性能，而且不同的数据集上对应的最佳的Anchor设置是不一样的。所以，设置Anchor是一个繁琐的过程(大量的尝试和在不同的数据集上做k-means类聚等)，并且降低了模型的泛化能力。</p>
+</li>
+<li><p>由于Anchor的参与，模型在训练时有大量繁琐的IoU计算，用来判断ground truth由哪个Anchor进行预测。</p>
+</li>
+</ul>
+<p>事实上，最初的YOLO1目标检测算法也是Anchor Free的，但是性能表现不佳，所以作者在YOLO2中改用Anchor Based的方法，并且提出使用k-means算法获取相对来说更具代表性的Anchor。</p>
+<p>YOLO1中引入了Cell的概念，目标的中心点落到哪个Cell，就由对应的Cell进行预测，导致一个目标最终只由一个像素点预测，一方面有严重的正负样本不均衡，另一方面由于预测的框少，所以召回率很低。因此，作者提出逐像素预测的方法进行改进。</p>
+<p>逐像素预测事实上就是ground truth中的所有的像素点(特征图对应区域中)都参与对这个框进行的预测，如图二左图的黄色框所示，黄色框中的所有像素点都是预测的正样本。回归网络输出的4个参数是ground truth相对于该像素点的左、上、右、下的距离,训练时样本计算方式如下：</p>
+<center>
+
+![边框距离计算公式](FCOS/边框距离计算公式.png)
+</center>
+
+<p>其中$l^*$表示网络应输出的参数，$x$表示进行预测的像素点位置，$x_0^{(i)}$是真实框$B_i$的左上角坐标的x。其他参数以此类推。</p>
+<p>这样真实框中的每一个像素点都参与直接预测真实框的4个位置参数，就是逐像素的Anchor Free目标检测。</p>
+<center>
+
+![](FCOS/逐像素预测.png)
+图2.左图展示逐像素预测策略，和回归预测生成的4个参数。右展示当预测的像素点落在两个ground truth的重叠区域时，该像素点用来预测那个框的参数是一个很困惑的问题
+</center>
+
+<h2 id="3-FPN多尺度预测"><a href="#3-FPN多尺度预测" class="headerlink" title="3.FPN多尺度预测"></a>3.FPN多尺度预测</h2><p>如图2的右图所示，当预测的像素点落在两个ground truth的重叠区域时，该像素点用来预测那个框的参数是一个很困惑的问题。</p>
+<p>作者提出两种方法来解决这一问题,一方面，通过FPN把大中小的目标区分开，由不同level的特征图进行预测。这样即使在原图中是重叠的，由于目标分属不同的level，因此也不会造成歧义(歧义指：不确定这个像素点预测哪个框)。另一方面，如果重叠的目标在同一层，那么将重叠的像素分给较小的框，因为较大的框拥有更多属于自己的像素来预测自己。</p>
+<p>此外，作者严格限制了FPN每个level预测的真实框的宽高最大值，即通过真实宽高的最大值来确定这个真实框由哪个level进行预测。</p>
+<p>最后，所有的level都使用相同的head(进行分类和回归的网络)。但是回归时，不同level输出的长度对应的大小范围是不一样的(顶层低分辨率的特征图每个像素点输出的左上右下的距离理论上应该大于底层高分辨率的特征图上每个像素点输出的左上右下的距离)，所以直接用相同的回归网络输出是有问题的，于是作者在原本的<code>exp(x)</code>(指数函数，用在回归网络的最后一层输出最终的长度)改为<code>exp(si,x)</code>,其中si是网络学习的参数，每一层自动学习自己的si(具体怎么学习的，作者也没说)。</p>
+<h2 id="4-Center-Ness"><a href="#4-Center-Ness" class="headerlink" title="4.Center-Ness"></a>4.Center-Ness</h2><p>在前文介绍网络结构时已经说明了和分类网络在一起的Center-Ness网络的作用，即距离ground truth较远的像素点预测得到的置信度，乘上Center-Ness网络的输出后会变得更小，最终通过NMS算法过滤掉。即Center-Ness网络实质上是预测像素点距真实框中心点的相对距离的，且距离越远，输出越小。Center-Ness的输出如下所示：</p>
+<center>
+
+![center-ness](FCOS/center-ness.png)
+</center>
+
+<p>这个公式其实很好理解，$l^<em>$是像素点距真实框左边距离, $r^</em>$是像素点距真实框右边距离，另外两个参数以此类推。$\frac{\min (l^<em>,r^</em>)}{\max (l^<em>,r^</em>)}$就是左右距离的最小值除以左右距离的最大值。显然，像素点越靠近中心，这个值越接近1(正落在中心时就是最大值1)。$\frac{\min (t^<em>,b^</em>)}{\max t^<em>,b^</em>)}$与之类似，只不过是上下尺度上的。两者相乘就是为了从总体上衡量像素点到中心的距离，开根号是为了避免让这个值过小，影响整体的置信度。</p>
+<p>Center-Ness是一个单独的指标，在训练时只关注像素点到框中心的距离，不参与其他运算，在推理预测时，输出的值才乘到分类分支上，抑制据中心点较远的像素点的置信度。事实上，作者也提出了只用ground truth中心部分的像素点做预测，然后忽略一部分ground truth中距离中心点较远的像素点类似<a href="">Feature Selective Anchor-Free Module for Single-Shot Object Detection</a>,效果也是不错的,但是会引入新的超参数。</p>
+<h2 id="5-实验部分"><a href="#5-实验部分" class="headerlink" title="5.实验部分"></a>5.实验部分</h2><p>略</p>
+<h2 id="6-个人总结"><a href="#6-个人总结" class="headerlink" title="6.个人总结"></a>6.个人总结</h2><p>很好的一篇论文，尤其是利用Center-Ness处理质量较差的框，在其他论文中是没见过的。论文解决了Anchor机制带来的弊端，同时改进了Anchor Free目标检测网络的低召回率问题。最主要的是，这个论文易读，易懂，强烈推建。</p>
+
       
     </div>
     <footer class="article-footer">
-      <a data-url="www.cam365.top/2020/09/21/FCOS/" data-id="ckfc6nr730000awv15849x97f" class="article-share-link">Share</a>
+      <a data-url="www.cam365.top/2020/09/21/FCOS/" data-id="ckfc6rf430000ycv1q5jgqugk" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -155,7 +193,7 @@
       
     </div>
     <footer class="article-footer">
-      <a data-url="www.cam365.top/2020/09/18/hello-world/" data-id="ckfc6nr7e0001awv1k6h1wwxs" class="article-share-link">Share</a>
+      <a data-url="www.cam365.top/2020/09/18/hello-world/" data-id="ckfc6rf480001ycv1e4e0vwth" class="article-share-link">Delen</a>
       
       
     </footer>
@@ -180,7 +218,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Archives</h3>
+    <h3 class="widget-title">Archieven</h3>
     <div class="widget">
       <ul class="archive-list"><li class="archive-list-item"><a class="archive-list-link" href="/archives/2020/09/">September 2020</a></li></ul>
     </div>
@@ -190,7 +228,7 @@
   
     
   <div class="widget-wrap">
-    <h3 class="widget-title">Recent Posts</h3>
+    <h3 class="widget-title">Recente berichten</h3>
     <div class="widget">
       <ul>
         
